@@ -3513,14 +3513,14 @@ static int __rtp_sendto(struct ast_rtp_instance *instance, void *buf, size_t siz
 			ao2_ref(transport, -1);
 			return len;
 		} 
-+		if (transport != (rtp->bundled ? rtp->bundled : instance)) {
-+			/*
-+			 * In case the transport was bundled or un-bundled while we were unlocked don't
-+			 * fall through to sending using the transport instance as we may no longer be
-+			 * associated with it.
-+			 */
-+			ao2_ref(transport, -1);
-+			return 0;
+		if (transport != (rtp->bundled ? rtp->bundled : instance)) {
+			/*
+			 * In case the transport was bundled or un-bundled while we were unlocked don't
+			 * fall through to sending using the transport instance as we may no longer be
+			 * associated with it.
+			 */
+			ao2_ref(transport, -1);
+			return 0;
 		}
 		ao2_ref(transport, -1);
 	}
