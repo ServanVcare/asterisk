@@ -3503,18 +3503,26 @@ static int __rtp_sendto(struct ast_rtp_instance *instance, void *buf, size_t siz
 		/* Release the instance lock to avoid deadlock with PJPROJECT group lock */
 		ice = transport_rtp->ice;
 		ao2_ref(ice, +1);
-		if (instance == transport) {
-			ao2_unlock(instance);
-		}
+		ao2_ref(transport, +1);
+		ao2_unlock(instance);
 		status = pj_ice_sess_send_data(ice->real_ice, component, temp, len);
 		ao2_ref(ice, -1);
-		if (instance == transport) {
-			ao2_lock(instance);
-		}
+		ao2_lock(instance);
 		if (status == PJ_SUCCESS) {
 			*via_ice = 1;
+			ao2_ref(transport, -1);
 			return len;
 		}
+		if (transport != (rtp->bundled ? rtp->bundled : instance)) {
+			/*
+			 * In case the transport was bundled or un-bundled while we were unlocked don't
+			 * fall through to sending using the transport instance as we may no longer be
+			 * associated with it.
+			 */
+			ao2_ref(transport, -1);
+			return 0;
+		}
+		ao2_ref(transport, -1);
 	}
 #endif
 
